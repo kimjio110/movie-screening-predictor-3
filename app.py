@@ -26,11 +26,10 @@ def load_data():
         raw = pd.read_csv(DATA_PATH, encoding="cp949", header=None)
 
     # 실제 컬럼명이 들어 있는 행 자동 탐색
-    # 보통 '영화명', '개봉일', '관객수', '매출액', '스크린수', '상영횟수' 등이 있는 줄
     header_row_index = None
 
     for i in range(len(raw)):
-        row_values = raw.iloc[i].astype(str).tolist()
+        row_values = raw.iloc[i].fillna("").astype(str).tolist()
         row_text = " ".join(row_values)
 
         if ("개봉일" in row_text) and ("관객수" in row_text) and ("매출액" in row_text):
@@ -44,7 +43,7 @@ def load_data():
         st.stop()
 
     # 찾은 행을 컬럼명으로 사용
-    raw.columns = raw.iloc[header_row_index]
+    raw.columns = raw.iloc[header_row_index].fillna("").astype(str)
     df = raw.iloc[header_row_index + 1:].copy()
 
     # 컬럼명 정리
@@ -54,23 +53,28 @@ def load_data():
     df = df.rename(columns={
         "개봉일": "release_date",
         "첫 개봉일": "release_date",
+
         "개봉일 기준 관객수": "first_day_audience",
         "첫날 관객수": "first_day_audience",
         "관객수": "first_day_audience",
+
         "개봉일 기준 매출액": "first_day_sales",
         "첫날 매출액": "first_day_sales",
         "매출액": "first_day_sales",
+
         "개봉일 기준 스크린수": "first_day_screens",
         "개봉일 기준 스크린 수": "first_day_screens",
         "첫날 스크린 수": "first_day_screens",
         "스크린수": "first_day_screens",
         "스크린 수": "first_day_screens",
+
         "개봉일 기준 상영횟수": "first_day_showings",
         "개봉일 기준 상영 횟수": "first_day_showings",
         "첫날 상영횟수": "first_day_showings",
         "첫날 상영 횟수": "first_day_showings",
         "상영횟수": "first_day_showings",
         "상영 횟수": "first_day_showings",
+
         "총 상영 일수 (Days)": "screening_days",
         "총 상영 일수": "screening_days",
         "상영 지속일수": "screening_days",
