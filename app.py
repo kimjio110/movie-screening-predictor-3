@@ -19,25 +19,63 @@ DATA_PATH = "movie_data_cleaned.csv"
 
 @st.cache_data
 def load_data():
+    # CSV 인코딩 문제 방지
     try:
-        df = pd.read_csv(DATA_PATH, encoding="utf-8")
+        raw = pd.read_csv(DATA_PATH, encoding="utf-8", header=None)
     except UnicodeDecodeError:
-        df = pd.read_csv(DATA_PATH, encoding="cp949")
+        raw = pd.read_csv(DATA_PATH, encoding="cp949", header=None)
 
+    # 실제 컬럼명이 들어 있는 행 자동 탐색
+    # 보통 '영화명', '개봉일', '관객수', '매출액', '스크린수', '상영횟수' 등이 있는 줄
+    header_row_index = None
+
+    for i in range(len(raw)):
+        row_values = raw.iloc[i].astype(str).tolist()
+        row_text = " ".join(row_values)
+
+        if ("개봉일" in row_text) and ("관객수" in row_text) and ("매출액" in row_text):
+            header_row_index = i
+            break
+
+    if header_row_index is None:
+        st.error("데이터에서 컬럼명 행을 찾지 못했습니다.")
+        st.write("CSV 파일의 앞부분을 확인해주세요.")
+        st.dataframe(raw.head(10))
+        st.stop()
+
+    # 찾은 행을 컬럼명으로 사용
+    raw.columns = raw.iloc[header_row_index]
+    df = raw.iloc[header_row_index + 1:].copy()
+
+    # 컬럼명 정리
+    df.columns = df.columns.astype(str).str.strip()
+
+    # 한국어 컬럼명을 영어 컬럼명으로 변경
     df = df.rename(columns={
         "개봉일": "release_date",
         "첫 개봉일": "release_date",
         "개봉일 기준 관객수": "first_day_audience",
         "첫날 관객수": "first_day_audience",
+        "관객수": "first_day_audience",
         "개봉일 기준 매출액": "first_day_sales",
         "첫날 매출액": "first_day_sales",
+        "매출액": "first_day_sales",
         "개봉일 기준 스크린수": "first_day_screens",
+        "개봉일 기준 스크린 수": "first_day_screens",
         "첫날 스크린 수": "first_day_screens",
+        "스크린수": "first_day_screens",
+        "스크린 수": "first_day_screens",
         "개봉일 기준 상영횟수": "first_day_showings",
+        "개봉일 기준 상영 횟수": "first_day_showings",
         "첫날 상영횟수": "first_day_showings",
+        "첫날 상영 횟수": "first_day_showings",
+        "상영횟수": "first_day_showings",
+        "상영 횟수": "first_day_showings",
         "총 상영 일수 (Days)": "screening_days",
         "총 상영 일수": "screening_days",
         "상영 지속일수": "screening_days",
+        "상영 지속 일수": "screening_days",
+        "총상영일수": "screening_days",
     })
 
     use_cols = [
@@ -55,12 +93,15 @@ def load_data():
         st.error("데이터 파일의 컬럼명이 맞지 않습니다.")
         st.write("필요한 컬럼:", use_cols)
         st.write("현재 데이터 컬럼:", list(df.columns))
+        st.dataframe(df.head())
         st.stop()
 
     df = df[use_cols].copy()
 
+    # 날짜 변환
     df["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
 
+    # 숫자 변환
     number_cols = [
         "first_day_audience",
         "first_day_sales",
@@ -70,13 +111,28 @@ def load_data():
     ]
 
     for col in number_cols:
+        df[col] = (
+            df[col]
+            .astype(str)
+            .str.replace(",", "", regex=False)
+            .str.replace("원", "", regex=False)
+            .str.replace("명", "", regex=False)
+            .str.replace("회", "", regex=False)
+            .str.replace("개", "", regex=False)
+            .str.strip()
+        )
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
+    # 결측치 제거
     df = df.dropna()
+
+    # 상영일수가 0 이하인 데이터 제거
     df = df[df["screening_days"] > 0]
 
     if len(df) < 10:
         st.error("학습 가능한 데이터가 너무 적습니다. CSV 파일을 확인해주세요.")
+        st.write("정리 후 남은 데이터 수:", len(df))
+        st.dataframe(df.head())
         st.stop()
 
     return df
@@ -123,6 +179,7 @@ def train_model(df):
     rmse = math.sqrt(mean_squared_error(y_test, pred))
     r2 = r2_score(y_test, pred)
 
+    # 최종 모델은 전체 데이터로 다시 학습
     model.fit(X, y)
 
     return model, mae, rmse, r2
