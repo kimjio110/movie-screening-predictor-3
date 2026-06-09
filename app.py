@@ -49,24 +49,29 @@ def load_data():
     # 컬럼명 정리
     df.columns = df.columns.astype(str).str.strip()
 
-    # 한국어 컬럼명을 영어 컬럼명으로 변경
+    # 한국어/영어 컬럼명을 모델용 영어 컬럼명으로 변경
     df = df.rename(columns={
         "개봉일": "release_date",
         "첫 개봉일": "release_date",
+        "release_date": "release_date",
 
         "개봉일 기준 관객수": "first_day_audience",
         "첫날 관객수": "first_day_audience",
         "관객수": "first_day_audience",
+        "first_day_audience": "first_day_audience",
 
         "개봉일 기준 매출액": "first_day_sales",
         "첫날 매출액": "first_day_sales",
         "매출액": "first_day_sales",
+        "first_day_sales": "first_day_sales",
 
         "개봉일 기준 스크린수": "first_day_screens",
         "개봉일 기준 스크린 수": "first_day_screens",
+        "첫날 스크린수": "first_day_screens",
         "첫날 스크린 수": "first_day_screens",
         "스크린수": "first_day_screens",
         "스크린 수": "first_day_screens",
+        "first_day_screens": "first_day_screens",
 
         "개봉일 기준 상영횟수": "first_day_showings",
         "개봉일 기준 상영 횟수": "first_day_showings",
@@ -74,12 +79,14 @@ def load_data():
         "첫날 상영 횟수": "first_day_showings",
         "상영횟수": "first_day_showings",
         "상영 횟수": "first_day_showings",
+        "first_day_showings": "first_day_showings",
 
         "총 상영 일수 (Days)": "screening_days",
         "총 상영 일수": "screening_days",
         "상영 지속일수": "screening_days",
         "상영 지속 일수": "screening_days",
         "총상영일수": "screening_days",
+        "screening_days": "screening_days",
     })
 
     use_cols = [
